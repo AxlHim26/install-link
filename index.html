@@ -1,0 +1,1756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GVIEW REMOTE - Secure Remote Desktop Connection</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-blue: #0066ff;
+            --secondary-blue: #00a8ff;
+            --dark-blue: #0047ab;
+            --light-blue: #e3f2fd;
+        }
+
+        @keyframes gradient-shift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 20px rgba(0, 102, 255, 0.5); }
+            50% { box-shadow: 0 0 40px rgba(0, 168, 255, 0.8); }
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            overflow-x: hidden;
+            overflow-y: auto;
+            margin: 0;
+            padding: 0;
+        }
+        
+        /* Header chứa navigation - không scroll */
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 999999;
+            width: 100%;
+        }
+        
+        /* Main content - có thể scroll */
+        main {
+            position: relative;
+            width: 100%;
+            perspective: 1000px;
+        }
+        
+        /* Đảm bảo navigation không bị ảnh hưởng bởi body perspective */
+        nav#navbar {
+            transform-style: flat !important;
+        }
+
+        /* Particle Background */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+            overflow: hidden;
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            animation: particle-float 15s infinite ease-in-out;
+        }
+
+        .particle:nth-child(1) { left: 10%; animation-delay: 0s; animation-duration: 12s; }
+        .particle:nth-child(2) { left: 20%; animation-delay: -2s; animation-duration: 15s; }
+        .particle:nth-child(3) { left: 30%; animation-delay: -4s; animation-duration: 18s; }
+        .particle:nth-child(4) { left: 40%; animation-delay: -6s; animation-duration: 14s; }
+        .particle:nth-child(5) { left: 50%; animation-delay: -8s; animation-duration: 16s; }
+        .particle:nth-child(6) { left: 60%; animation-delay: -10s; animation-duration: 13s; }
+        .particle:nth-child(7) { left: 70%; animation-delay: -12s; animation-duration: 17s; }
+        .particle:nth-child(8) { left: 80%; animation-delay: -14s; animation-duration: 15s; }
+        .particle:nth-child(9) { left: 90%; animation-delay: -16s; animation-duration: 14s; }
+
+        @keyframes particle-float {
+            0% {
+                transform: translateY(100vh) translateX(0) scale(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100px) translateX(100px) scale(1);
+                opacity: 0;
+            }
+        }
+
+        /* Navigation - CỐ ĐỊNH 100% */
+        nav#navbar {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            width: 100% !important;
+            z-index: 999999 !important;
+            background: rgba(255, 255, 255, 0.6) !important;
+            backdrop-filter: blur(15px) saturate(180%) !important;
+            -webkit-backdrop-filter: blur(15px) saturate(180%) !important;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05) !important;
+            padding: 20px 0 !important;
+            margin: 0 !important;
+            border: none !important;
+            border-bottom: 2px solid transparent !important;
+            transform: none !important;
+            translate: none !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+            display: block !important;
+            pointer-events: auto !important;
+            height: auto !important;
+            min-height: 60px !important;
+            max-height: none !important;
+            transition: background 0.5s ease, backdrop-filter 0.5s ease, box-shadow 0.5s ease, padding 0.5s ease, border-bottom 0.5s ease !important;
+        }
+        
+        /* Đảm bảo không có gì override */
+        html nav#navbar,
+        body nav#navbar,
+        * nav#navbar {
+            position: fixed !important;
+            top: 0 !important;
+        }
+
+        nav::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(0, 102, 255, 0.05) 0%, rgba(0, 168, 255, 0.05) 100%);
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            pointer-events: none;
+        }
+
+        nav::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #0066ff, #00a8ff, transparent);
+            border-radius: 3px;
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        nav#navbar.scrolled {
+            background: rgba(255, 255, 255, 0.95) !important;
+            backdrop-filter: blur(25px) saturate(200%) !important;
+            -webkit-backdrop-filter: blur(25px) saturate(200%) !important;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15),
+                        0 0 0 1px rgba(255, 255, 255, 0.5),
+                        0 0 60px rgba(0, 102, 255, 0.1) !important;
+            padding: 15px 0 !important;
+            transform: none !important;
+            translate: none !important;
+            border-bottom: 2px solid rgba(0, 102, 255, 0.2) !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+            display: block !important;
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            width: 100% !important;
+            z-index: 999999 !important;
+            margin: 0 !important;
+        }
+
+        nav.scrolled::before {
+            opacity: 1;
+        }
+
+        nav.scrolled::after {
+            width: 80%;
+        }
+
+
+        /* Smooth logo transition */
+        .logo {
+            transition: transform 0.3s ease, filter 0.3s ease;
+        }
+
+        nav.scrolled .logo {
+            transform: scale(0.95);
+            filter: brightness(1.1);
+        }
+
+        /* Nav links smooth transition */
+        .nav-links a {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        nav.scrolled .nav-links a {
+            transform: translateY(0);
+        }
+
+        /* CTA button enhanced effect */
+        nav.scrolled .nav-cta {
+            box-shadow: 0 4px 15px rgba(0, 102, 255, 0.3),
+                        0 0 0 1px rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5em;
+            font-weight: 700;
+            background: linear-gradient(135deg, #0066ff, #00a8ff, #0066ff);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradient-shift 3s ease infinite;
+            position: relative;
+            transition: transform 0.3s ease;
+        }
+
+        .logo:hover {
+            transform: scale(1.05);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 30px;
+            list-style: none;
+            align-items: center;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #333;
+            font-weight: 500;
+            transition: color 0.3s ease;
+            position: relative;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: linear-gradient(135deg, #0066ff, #00a8ff);
+            transition: width 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: #0066ff;
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        .nav-cta {
+            padding: 10px 25px;
+            background: linear-gradient(135deg, #0066ff, #00a8ff);
+            background-size: 200% 200%;
+            color: white;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-cta::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .nav-cta:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .nav-cta:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 10px 30px rgba(0,102,255,0.4);
+            animation: gradient-shift 2s ease infinite;
+        }
+
+        .nav-cta span {
+            position: relative;
+            z-index: 1;
+        }
+
+        .mobile-menu-toggle {
+            display: none;
+            flex-direction: column;
+            gap: 5px;
+            cursor: pointer;
+        }
+
+        .mobile-menu-toggle span {
+            width: 25px;
+            height: 3px;
+            background: #333;
+            border-radius: 3px;
+            transition: all 0.3s ease;
+        }
+
+        /* Animated Wave Background */
+        .wave-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: -1;
+        }
+
+        .wave {
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(135deg, #0066ff 0%, #00a8ff 50%, #0047ab 100%);
+            opacity: 0.1;
+            animation: wave-animation 20s infinite linear;
+        }
+
+        .wave:nth-child(2) {
+            animation-delay: -5s;
+            opacity: 0.15;
+        }
+
+        .wave:nth-child(3) {
+            animation-delay: -10s;
+            opacity: 0.1;
+        }
+
+        @keyframes wave-animation {
+            0% {
+                transform: translateX(-50%) translateY(-50%) rotate(0deg);
+            }
+            100% {
+                transform: translateX(-50%) translateY(-50%) rotate(360deg);
+            }
+        }
+
+        /* Hero Section */
+        .hero {
+            position: relative;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #0066ff 0%, #00a8ff 50%, #0047ab 100%);
+            background-size: 400% 400%;
+            animation: gradient-shift 15s ease infinite;
+            padding: 120px 20px 80px;
+            overflow: hidden;
+            transform-style: preserve-3d;
+        }
+
+        .hero::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+            animation: float 20s ease-in-out infinite;
+        }
+
+        /* Floating Laptops Animation */
+        .laptops-container {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .laptop {
+            position: absolute;
+            width: 120px;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            animation: float-laptop 15s infinite ease-in-out;
+        }
+
+        .laptop::before {
+            content: '';
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 6px 6px 0 0;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .laptop::after {
+            content: '';
+            position: absolute;
+            bottom: 5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.4);
+            border-radius: 2px;
+        }
+
+        .laptop:nth-child(1) {
+            top: 10%;
+            left: 10%;
+            animation-delay: 0s;
+            animation-duration: 18s;
+            --rotation: -15deg;
+        }
+
+        .laptop:nth-child(2) {
+            top: 20%;
+            right: 15%;
+            animation-delay: -2.5s;
+            animation-duration: 20s;
+            --rotation: 20deg;
+        }
+
+        .laptop:nth-child(3) {
+            bottom: 25%;
+            left: 20%;
+            animation-delay: -5s;
+            animation-duration: 16s;
+            --rotation: -25deg;
+        }
+
+        .laptop:nth-child(4) {
+            bottom: 15%;
+            right: 10%;
+            animation-delay: -7s;
+            animation-duration: 22s;
+            --rotation: 15deg;
+        }
+
+        .laptop:nth-child(5) {
+            top: 50%;
+            left: 5%;
+            animation-delay: -9s;
+            animation-duration: 19s;
+            --rotation: -10deg;
+        }
+
+        .laptop:nth-child(6) {
+            top: 60%;
+            right: 5%;
+            animation-delay: -11s;
+            animation-duration: 17s;
+            --rotation: 25deg;
+        }
+
+        .laptop:nth-child(7) {
+            top: 30%;
+            left: 50%;
+            animation-delay: -13s;
+            animation-duration: 21s;
+            --rotation: -20deg;
+        }
+
+        .laptop:nth-child(8) {
+            bottom: 30%;
+            right: 30%;
+            animation-delay: -15s;
+            animation-duration: 18s;
+            --rotation: 10deg;
+        }
+
+        @keyframes float-laptop {
+            0% {
+                transform: translate(0, 0) rotate(var(--rotation, 0deg));
+            }
+            10% {
+                transform: translate(40px, -20px) rotate(calc(var(--rotation, 0deg) + 8deg));
+            }
+            20% {
+                transform: translate(-30px, 30px) rotate(calc(var(--rotation, 0deg) - 10deg));
+            }
+            30% {
+                transform: translate(50px, 20px) rotate(calc(var(--rotation, 0deg) + 12deg));
+            }
+            40% {
+                transform: translate(-20px, -40px) rotate(calc(var(--rotation, 0deg) - 8deg));
+            }
+            50% {
+                transform: translate(30px, 50px) rotate(calc(var(--rotation, 0deg) + 15deg));
+            }
+            60% {
+                transform: translate(-50px, -30px) rotate(calc(var(--rotation, 0deg) - 12deg));
+            }
+            70% {
+                transform: translate(20px, 40px) rotate(calc(var(--rotation, 0deg) + 10deg));
+            }
+            80% {
+                transform: translate(-40px, -20px) rotate(calc(var(--rotation, 0deg) - 6deg));
+            }
+            90% {
+                transform: translate(35px, 25px) rotate(calc(var(--rotation, 0deg) + 8deg));
+            }
+            100% {
+                transform: translate(0, 0) rotate(var(--rotation, 0deg));
+            }
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: float 20s infinite linear;
+        }
+
+        @keyframes float {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(50px, 50px); }
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            color: white;
+            max-width: 900px;
+            transform-style: preserve-3d;
+            animation: fadeInUp 1s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .hero h1 {
+            font-size: 4em;
+            font-weight: 800;
+            margin-bottom: 20px;
+            text-shadow: 0 0 40px rgba(255, 255, 255, 0.8),
+                         0 0 80px rgba(255, 255, 255, 0.5),
+                         2px 2px 10px rgba(0,0,0,0.3);
+            letter-spacing: -1px;
+            color: #ffffff;
+            position: relative;
+        }
+
+        .hero .tagline {
+            font-size: 1.5em;
+            margin-bottom: 30px;
+            opacity: 0.95;
+            font-weight: 300;
+            animation: fadeInUp 1s ease-out 0.2s both;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+
+        .hero .description {
+            font-size: 1.1em;
+            margin-bottom: 40px;
+            opacity: 0.9;
+            line-height: 1.8;
+            animation: fadeInUp 1s ease-out 0.4s both;
+            text-shadow: 0 1px 5px rgba(0,0,0,0.1);
+        }
+
+        .cta-button {
+            display: inline-block;
+            padding: 18px 40px;
+            background: white;
+            color: var(--primary-blue);
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 1.1em;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2),
+                        0 0 0 0 rgba(255, 255, 255, 0.7);
+            position: relative;
+            overflow: hidden;
+            transform-style: preserve-3d;
+        }
+
+        .cta-button::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(0, 102, 255, 0.1);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .cta-button:hover::before {
+            width: 400px;
+            height: 400px;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-5px) scale(1.05) rotateX(5deg);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3),
+                        0 0 0 10px rgba(255, 255, 255, 0.1);
+            animation: glow 2s ease-in-out infinite;
+        }
+
+        .cta-button:active {
+            transform: translateY(-2px) scale(1.02);
+        }
+
+        .cta-button span {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Section Styles */
+        section {
+            padding: 100px 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2.8em;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: var(--dark-blue);
+            position: relative;
+            display: inline-block;
+            width: 100%;
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 4px;
+            background: linear-gradient(135deg, #0066ff, #00a8ff);
+            border-radius: 2px;
+            animation: expand 1s ease-out 0.5s both;
+        }
+
+        @keyframes expand {
+            from {
+                width: 0;
+            }
+            to {
+                width: 80px;
+            }
+        }
+
+        .section-subtitle {
+            text-align: center;
+            font-size: 1.2em;
+            color: #666;
+            margin-bottom: 60px;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Features Section */
+        .features {
+            background: #f8f9fa;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 40px;
+            margin-top: 60px;
+        }
+
+        .feature-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            transform-style: preserve-3d;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(0, 102, 255, 0.1) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .feature-card:hover::before {
+            opacity: 1;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-15px) rotateX(5deg) rotateY(-5deg) scale(1.02);
+            box-shadow: 0 20px 60px rgba(0,102,255,0.25),
+                        0 0 0 1px rgba(0, 102, 255, 0.1);
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        .feature-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #0066ff, #00a8ff);
+            border-radius: 20px;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            cursor: pointer;
+        }
+
+        .feature-card:hover .feature-icon {
+            transform: scale(1.15) rotate(5deg);
+            box-shadow: 0 10px 30px rgba(0, 102, 255, 0.4);
+        }
+
+        .feature-icon::before {
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover .feature-icon::before {
+            transform: scale(1.1);
+        }
+
+        .feature-icon::before {
+            content: '';
+            width: 40px;
+            height: 40px;
+            border: 3px solid white;
+            border-radius: 8px;
+            position: absolute;
+        }
+
+        .feature-icon.lock::before {
+            border-radius: 8px 8px 0 0;
+            height: 25px;
+            top: 15px;
+            animation: lock-pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes lock-pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .feature-icon.lock::after {
+            content: '';
+            width: 15px;
+            height: 15px;
+            border: 3px solid white;
+            border-right: none;
+            border-top: none;
+            border-radius: 0 0 0 8px;
+            position: absolute;
+            top: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover .feature-icon.lock::after {
+            transform: translateX(-50%) scale(1.2);
+        }
+
+        .feature-icon.speed::before {
+            border-radius: 50%;
+            border-width: 4px;
+            border-top-color: transparent;
+            border-right-color: transparent;
+            animation: spin 1.5s linear infinite;
+        }
+
+        .feature-icon.speed::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-left: 8px solid white;
+            border-top: 5px solid transparent;
+            border-bottom: 5px solid transparent;
+            top: 50%;
+            left: 60%;
+            transform: translateY(-50%);
+            animation: arrow-pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes arrow-pulse {
+            0%, 100% { opacity: 1; transform: translateY(-50%) translateX(0); }
+            50% { opacity: 0.5; transform: translateY(-50%) translateX(5px); }
+        }
+
+        .feature-icon.globe::before {
+            border-radius: 50%;
+            border-width: 3px;
+            animation: globe-rotate 3s linear infinite;
+        }
+
+        @keyframes globe-rotate {
+            to { transform: rotate(360deg); }
+        }
+
+        .feature-icon.globe::after {
+            content: '';
+            width: 30px;
+            height: 2px;
+            background: white;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation: globe-line 3s ease-in-out infinite;
+        }
+
+        @keyframes globe-line {
+            0%, 100% { width: 30px; }
+            50% { width: 35px; }
+        }
+
+        .feature-icon.collaborate::before {
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            top: 15px;
+            left: 20px;
+            animation: collaborate-pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes collaborate-pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .feature-icon.collaborate::after {
+            content: '';
+            width: 25px;
+            height: 25px;
+            border: 3px solid white;
+            border-radius: 50%;
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            animation: collaborate-pulse 2s ease-in-out infinite 0.5s;
+        }
+
+        .feature-icon.enterprise::before {
+            width: 35px;
+            height: 30px;
+            border-radius: 4px;
+            border-bottom: none;
+            animation: enterprise-glow 2s ease-in-out infinite;
+        }
+
+        @keyframes enterprise-glow {
+            0%, 100% { box-shadow: 0 0 0 rgba(255, 255, 255, 0.5); }
+            50% { box-shadow: 0 0 15px rgba(255, 255, 255, 0.8); }
+        }
+
+        .feature-icon.enterprise::after {
+            content: '';
+            width: 0;
+            height: 0;
+            border-left: 20px solid transparent;
+            border-right: 20px solid transparent;
+            border-bottom: 12px solid white;
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover .feature-icon.enterprise::after {
+            transform: translateX(-50%) translateY(-3px);
+        }
+
+        .feature-icon.setup::before {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border-width: 3px;
+            border-top-color: transparent;
+            animation: setup-spin 3s linear infinite;
+        }
+
+        @keyframes setup-spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .feature-icon.setup::after {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: white;
+            border-radius: 50%;
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            animation: setup-dot 3s ease-in-out infinite;
+        }
+
+        @keyframes setup-dot {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .feature-card h3 {
+            font-size: 1.5em;
+            margin-bottom: 15px;
+            color: var(--dark-blue);
+            transition: color 0.3s ease;
+            position: relative;
+        }
+
+        .feature-card:hover h3 {
+            color: var(--primary-blue);
+            transform: translateX(5px);
+        }
+
+        .feature-card p {
+            color: #666;
+            line-height: 1.8;
+            transition: color 0.3s ease;
+        }
+
+        .feature-card:hover p {
+            color: #555;
+        }
+
+        /* Gallery Section */
+        .gallery {
+            background: white;
+        }
+
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin-top: 60px;
+        }
+
+        .gallery-item {
+            position: relative;
+            border-radius: 20px;
+            overflow: hidden;
+            aspect-ratio: 16/10;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-style: preserve-3d;
+        }
+
+        .gallery-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(0, 102, 255, 0.1) 0%, transparent 100%);
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            z-index: 1;
+        }
+
+        .gallery-item:hover::before {
+            opacity: 1;
+        }
+
+        .gallery-item:hover {
+            transform: scale(1.08) rotateY(5deg) rotateX(-5deg);
+            box-shadow: 0 30px 70px rgba(0,102,255,0.3);
+        }
+
+        .gallery-placeholder {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #0066ff 0%, #00a8ff 50%, #0047ab 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2em;
+            font-weight: 500;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .gallery-placeholder::before {
+            content: '';
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            background: repeating-linear-gradient(
+                45deg,
+                transparent,
+                transparent 10px,
+                rgba(255,255,255,0.05) 10px,
+                rgba(255,255,255,0.05) 20px
+            );
+            animation: slide 20s infinite linear;
+        }
+
+        @keyframes slide {
+            0% { transform: translateX(-50%) translateY(-50%) rotate(0deg); }
+            100% { transform: translateX(-50%) translateY(-50%) rotate(360deg); }
+        }
+
+        .gallery-placeholder span {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Download Section */
+        .download {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e3f2fd 100%);
+        }
+
+        .download-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+            margin-top: 60px;
+        }
+
+        .download-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px 30px;
+            text-align: center;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+            border: 2px solid transparent;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            transform-style: preserve-3d;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .download-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .download-card:hover::before {
+            left: 100%;
+        }
+
+        .download-card:hover {
+            transform: translateY(-15px) rotateX(5deg) scale(1.05);
+            box-shadow: 0 25px 60px rgba(0,102,255,0.3),
+                        0 0 0 2px rgba(0, 102, 255, 0.2);
+            border-color: var(--primary-blue);
+        }
+
+        .platform-logo {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px;
+            background: linear-gradient(135deg, #0066ff, #00a8ff);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .platform-logo::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(-100%);
+            transition: transform 0.5s ease;
+        }
+
+        .download-card:hover .platform-logo::before {
+            transform: translateX(100%);
+        }
+
+        .download-card:hover .platform-logo {
+            transform: scale(1.1) rotate(5deg);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .download-card.macos .platform-logo {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+        }
+
+        .download-card.ubuntu .platform-logo {
+            background: linear-gradient(135deg, #f093fb, #f5576c);
+        }
+
+        .download-card.windows .platform-logo {
+            background: linear-gradient(135deg, #4facfe, #00f2fe);
+        }
+
+        /* macOS Apple Logo */
+        .platform-logo.macos-icon {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+        }
+
+        .platform-logo.macos-icon svg {
+            width: 50px;
+            height: 50px;
+            fill: white;
+        }
+
+        /* Ubuntu Logo */
+        .platform-logo.ubuntu-icon {
+            background: linear-gradient(135deg, #f093fb, #f5576c);
+        }
+
+        .platform-logo.ubuntu-icon svg {
+            width: 50px;
+            height: 50px;
+        }
+
+        /* Windows Logo */
+        .platform-logo.windows-icon {
+            background: linear-gradient(135deg, #4facfe, #00f2fe);
+        }
+
+        .platform-logo.windows-icon svg {
+            width: 50px;
+            height: 50px;
+        }
+
+        .platform-name {
+            font-size: 1.8em;
+            font-weight: 600;
+            color: var(--dark-blue);
+            margin-bottom: 10px;
+        }
+
+        .platform-desc {
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .download-btn {
+            display: inline-block;
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #0066ff, #00a8ff);
+            background-size: 200% 200%;
+            color: white;
+            border-radius: 25px;
+            font-weight: 600;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 102, 255, 0.3);
+        }
+
+        .download-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .download-btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .download-card:hover .download-btn {
+            transform: scale(1.1) translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 102, 255, 0.5);
+            animation: gradient-shift 2s ease infinite;
+        }
+
+        /* Footer */
+        footer {
+            background: linear-gradient(135deg, var(--dark-blue) 0%, #003366 100%);
+            color: white;
+            text-align: center;
+            padding: 40px 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        footer::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
+            animation: float 15s ease-in-out infinite;
+        }
+
+        footer p {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .nav-links {
+                position: fixed;
+                top: 70px;
+                left: -100%;
+                width: 100%;
+                background: white;
+                flex-direction: column;
+                padding: 20px;
+                box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+                transition: left 0.3s ease;
+            }
+
+            .nav-links.active {
+                left: 0;
+            }
+
+            .mobile-menu-toggle {
+                display: flex;
+            }
+
+            .hero {
+                padding: 100px 20px 60px;
+            }
+
+            .hero h1 {
+                font-size: 2.5em;
+            }
+
+            .hero .tagline {
+                font-size: 1.2em;
+            }
+
+            .section-title {
+                font-size: 2em;
+            }
+
+            .features-grid,
+            .gallery-grid,
+            .download-grid {
+                grid-template-columns: 1fr;
+            }
+
+            section {
+                padding: 60px 20px;
+            }
+
+            .laptop {
+                width: 80px;
+                height: 60px;
+            }
+
+            .laptop::before {
+                width: 70px;
+                height: 45px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Particle Background -->
+    <div class="particles">
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+    </div>
+
+    <!-- Header với Navigation -->
+    <header>
+        <nav id="navbar" style="position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; width: 100% !important; z-index: 999999 !important; transform: none !important; opacity: 1 !important; visibility: visible !important; display: block !important;">
+            <div class="nav-container">
+                <div class="logo">GVIEW REMOTE</div>
+                <ul class="nav-links" id="navLinks">
+                    <li><a href="#home">Home</a></li>
+                    <li><a href="#features">Features</a></li>
+                    <li><a href="#gallery">Gallery</a></li>
+                    <li><a href="#download">Download</a></li>
+                    <li><a href="#download" class="nav-cta"><span>Get Started</span></a></li>
+                </ul>
+                <div class="mobile-menu-toggle" id="mobileMenuToggle">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main>
+        <!-- Hero Section -->
+    <section class="hero" id="home">
+        <div class="wave-background">
+            <div class="wave"></div>
+            <div class="wave"></div>
+            <div class="wave"></div>
+        </div>
+        <div class="laptops-container">
+            <div class="laptop" style="--rotation: -15deg;"></div>
+            <div class="laptop" style="--rotation: 20deg;"></div>
+            <div class="laptop" style="--rotation: -25deg;"></div>
+            <div class="laptop" style="--rotation: 15deg;"></div>
+            <div class="laptop" style="--rotation: -10deg;"></div>
+            <div class="laptop" style="--rotation: 25deg;"></div>
+            <div class="laptop" style="--rotation: -20deg;"></div>
+            <div class="laptop" style="--rotation: 10deg;"></div>
+        </div>
+        <div class="hero-content">
+            <h1>GVIEW REMOTE</h1>
+            <p class="tagline">Connect. Control. Collaborate.</p>
+            <p class="description">
+                Experience seamless remote desktop connections with GVIEW REMOTE. 
+                Connect to any computer from anywhere, just like TeamViewer, with 
+                enterprise-grade security and lightning-fast performance.
+            </p>
+            <a href="#download" class="cta-button"><span>Download Now</span></a>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features" id="features">
+        <h2 class="section-title">Why Choose GVIEW REMOTE?</h2>
+        <p class="section-subtitle">
+            Powerful features that make remote access simple, secure, and efficient
+        </p>
+        
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon lock"></div>
+                <h3>Bank-Level Security</h3>
+                <p>
+                    End-to-end encryption ensures your remote sessions are protected 
+                    with military-grade security. Your data stays private and secure.
+                </p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon speed"></div>
+                <h3>Lightning Fast</h3>
+                <p>
+                    Optimized for speed with advanced compression algorithms. 
+                    Experience smooth, lag-free remote desktop sessions even on 
+                    slower connections.
+                </p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon globe"></div>
+                <h3>Cross-Platform</h3>
+                <p>
+                    Works seamlessly across Windows, macOS, and Linux. Connect 
+                    from any device to any device, anywhere in the world.
+                </p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon collaborate"></div>
+                <h3>Easy Collaboration</h3>
+                <p>
+                    Share your screen, transfer files, and collaborate in real-time. 
+                    Perfect for remote work, IT support, and team collaboration.
+                </p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon enterprise"></div>
+                <h3>Enterprise Ready</h3>
+                <p>
+                    Built for businesses of all sizes. Advanced management tools, 
+                    user permissions, and comprehensive audit logs.
+                </p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon setup"></div>
+                <h3>Simple Setup</h3>
+                <p>
+                    Get started in minutes. No complex configuration needed. 
+                    Intuitive interface that anyone can use.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Gallery Section -->
+    <section class="gallery" id="gallery">
+        <h2 class="section-title">See GVIEW REMOTE in Action</h2>
+        <p class="section-subtitle">
+            Beautiful interface, powerful features, seamless experience
+        </p>
+
+        <div class="gallery-grid">
+            <div class="gallery-item">
+                <div class="gallery-placeholder">
+                    <span>Dashboard Screenshot</span>
+                </div>
+            </div>
+
+            <div class="gallery-item">
+                <div class="gallery-placeholder">
+                    <span>Remote Connection View</span>
+                </div>
+            </div>
+
+            <div class="gallery-item">
+                <div class="gallery-placeholder">
+                    <span>File Transfer Interface</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Download Section -->
+    <section class="download" id="download">
+        <h2 class="section-title">Download GVIEW REMOTE</h2>
+        <p class="section-subtitle">
+            Available for all major operating systems. Choose your platform and get started today.
+        </p>
+
+        <div class="download-grid">
+            <a href="#" class="download-card macos" id="macos-link">
+                <div class="platform-logo macos-icon">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M18.71 19.5C17.88 20.74 17 21.95 15.66 21.97C14.32 22 13.89 21.18 12.37 21.18C10.84 21.18 10.37 21.95 9.1 22C7.79 22.05 6.8 20.68 5.96 19.47C4.25 17 2.94 12.45 4.7 9.39C5.57 7.87 7.13 6.91 8.82 6.88C10.1 6.86 11.32 7.75 12.11 7.75C12.89 7.75 14.37 6.68 15.92 6.84C16.57 6.87 18.39 7.1 19.56 8.82C19.47 8.88 17.39 10.1 17.41 12.63C17.44 15.65 20.06 16.66 20.09 16.67C20.06 16.74 19.67 18.11 18.71 19.5ZM13 3.5C13.73 2.67 14.94 2.04 15.94 2C16.07 3.17 15.6 4.35 14.9 5.19C14.21 6.04 13.07 6.7 11.95 6.61C11.8 5.46 12.36 4.26 13 3.5Z" fill="white"/>
+                    </svg>
+                </div>
+                <div class="platform-name">macOS</div>
+                <div class="platform-desc">For Mac users</div>
+                <div class="download-btn">Download</div>
+            </a>
+
+            <a href="#" class="download-card ubuntu" id="ubuntu-link">
+                <div class="platform-logo ubuntu-icon">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="12" cy="12" r="10" fill="white"/>
+                        <circle cx="12" cy="12" r="8" fill="white" opacity="0.3"/>
+                        <path d="M12 4C8.5 4 5.4 5.5 3.5 8L6 10.5C7.2 8.5 9.4 7.2 12 7.2C14.6 7.2 16.8 8.5 18 10.5L20.5 8C18.6 5.5 15.5 4 12 4Z" fill="white" opacity="0.8"/>
+                        <path d="M12 20C15.5 20 18.6 18.5 20.5 16L18 13.5C16.8 15.5 14.6 16.8 12 16.8C9.4 16.8 7.2 15.5 6 13.5L3.5 16C5.4 18.5 8.5 20 12 20Z" fill="white" opacity="0.8"/>
+                        <circle cx="12" cy="12" r="3" fill="white"/>
+                    </svg>
+                </div>
+                <div class="platform-name">Ubuntu</div>
+                <div class="platform-desc">For Linux users</div>
+                <div class="download-btn">Download</div>
+            </a>
+
+            <a href="#" class="download-card windows" id="windows-link">
+                <div class="platform-logo windows-icon">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M3 12V6.75L11 5.43V11.57L3 12ZM20.25 4L11 5.43V11.57L20.25 10.14V4ZM3 13L11 13.43V19.57L3 18.25V13ZM20.25 13.86L11 13.43V19.57L20.25 20V13.86Z" fill="white"/>
+                    </svg>
+                </div>
+                <div class="platform-name">Windows</div>
+                <div class="platform-desc">For PC users</div>
+                <div class="download-btn">Download</div>
+            </a>
+        </div>
+    </section>
+
+        <!-- Footer -->
+        <footer>
+            <p>&copy; 2025 GVIEW REMOTE. All rights reserved.</p>
+            <p style="margin-top: 10px; opacity: 0.8;">Secure remote desktop connection software</p>
+        </footer>
+    </main>
+
+    <script>
+        // FORCE NAVIGATION FIXED - CHẠY NGAY KHI LOAD
+        (function() {
+            const navbar = document.getElementById('navbar');
+            if (!navbar) return;
+            
+            // Force fixed ngay lập tức
+            function forceFixed() {
+                navbar.style.cssText += 'position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; width: 100% !important; z-index: 999999 !important; transform: none !important; opacity: 1 !important; visibility: visible !important; display: block !important;';
+            }
+            
+            // Chạy ngay
+            forceFixed();
+            
+            // Chạy khi DOM ready
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', forceFixed);
+            }
+            
+            // Force mỗi frame
+            function lockNavbar() {
+                forceFixed();
+                requestAnimationFrame(lockNavbar);
+            }
+            lockNavbar();
+            
+            // Force khi scroll
+            window.addEventListener('scroll', forceFixed, { passive: true });
+            
+            // Thêm class scrolled khi scroll
+            window.addEventListener('scroll', () => {
+                const scroll = window.pageYOffset || window.scrollY || document.documentElement.scrollTop;
+                if (scroll > 50) {
+                    navbar.classList.add('scrolled');
+                } else {
+                    navbar.classList.remove('scrolled');
+                }
+            }, { passive: true });
+        })();
+        
+        // Parallax effects
+        function updateParallax() {
+            const scroll = window.pageYOffset || window.scrollY || document.documentElement.scrollTop;
+            
+            const heroContent = document.querySelector('.hero-content');
+            if (heroContent && scroll < window.innerHeight) {
+                heroContent.style.transform = `translateY(${scroll * 0.5}px)`;
+                heroContent.style.opacity = 1 - (scroll / window.innerHeight);
+            }
+            
+            if (scroll < window.innerHeight * 2) {
+                const laptops = document.querySelectorAll('.laptop');
+                laptops.forEach((laptop, index) => {
+                    const speed = 0.2 + (index % 3) * 0.05;
+                    laptop.style.transform = `translateY(${scroll * speed}px)`;
+                });
+            }
+        }
+        
+        window.addEventListener('scroll', updateParallax, { passive: true });
+
+        // Intersection Observer for fade-in animations
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.animation = 'fadeInUp 0.8s ease-out forwards';
+                    entry.target.style.opacity = '1';
+                }
+            });
+        }, observerOptions);
+
+        // Observe all feature cards and gallery items
+        document.querySelectorAll('.feature-card, .gallery-item, .download-card').forEach(el => {
+            el.style.opacity = '0';
+            observer.observe(el);
+        });
+
+        // Magnetic hover effect for buttons
+        document.querySelectorAll('.cta-button, .nav-cta, .download-btn').forEach(button => {
+            button.addEventListener('mousemove', (e) => {
+                const rect = button.getBoundingClientRect();
+                const x = e.clientX - rect.left - rect.width / 2;
+                const y = e.clientY - rect.top - rect.height / 2;
+                
+                button.style.transform = `translate(${x * 0.1}px, ${y * 0.1}px)`;
+            });
+            
+            button.addEventListener('mouseleave', () => {
+                button.style.transform = '';
+            });
+        });
+
+        // 3D tilt effect for cards
+        document.querySelectorAll('.feature-card, .download-card').forEach(card => {
+            card.addEventListener('mousemove', (e) => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                const centerX = rect.width / 2;
+                const centerY = rect.height / 2;
+                
+                const rotateX = (y - centerY) / 15;
+                const rotateY = (centerX - x) / 15;
+                
+                card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateZ(10px)`;
+            });
+            
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = '';
+            });
+        });
+
+        // Mobile menu toggle
+        const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+        const navLinks = document.getElementById('navLinks');
+        
+        mobileMenuToggle.addEventListener('click', () => {
+            navLinks.classList.toggle('active');
+            mobileMenuToggle.classList.toggle('active');
+        });
+
+        // Close mobile menu when clicking on a link
+        document.querySelectorAll('.nav-links a').forEach(link => {
+            link.addEventListener('click', () => {
+                navLinks.classList.remove('active');
+                mobileMenuToggle.classList.remove('active');
+            });
+        });
+
+        // Smooth scroll for anchor links with easing
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    const offsetTop = target.offsetTop - 80;
+                    window.scrollTo({
+                        top: offsetTop,
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+
+        // Dynamic particle generation
+        function createParticle() {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            particle.style.left = Math.random() * 100 + '%';
+            particle.style.animationDuration = (10 + Math.random() * 10) + 's';
+            particle.style.animationDelay = Math.random() * 5 + 's';
+            document.querySelector('.particles').appendChild(particle);
+            
+            setTimeout(() => {
+                particle.remove();
+            }, 20000);
+        }
+
+        // Create particles periodically
+        setInterval(createParticle, 2000);
+
+        // Update download links here
+        document.getElementById('macos-link').href = 'https://example.com/download/gview-remote-macos.dmg';
+        document.getElementById('ubuntu-link').href = 'https://example.com/download/gview-remote-ubuntu.deb';
+        document.getElementById('windows-link').href = 'https://example.com/download/gview-remote-windows.exe';
+    </script>
+</body>
+</html>
