@@ -1747,27 +1747,18 @@
         // Create particles periodically
         setInterval(createParticle, 2000);
 
-        // Update download links here (direct links so clicking starts download)
+        // Update download links here (mở trang Google Drive thay vì cố tải trực tiếp)
         const downloadLinks = {
-            macos: {
-                url: 'https://drive.google.com/uc?export=download&id=1uB7HPJJhFM8wk4F1F-mUu_VWotiVgvOl',
-                filename: 'gview-remote-macos.dmg'
-            },
-            ubuntu: {
-                url: 'https://drive.google.com/uc?export=download&id=1KH0bFxFSLw-Y2COVeUAqPPJsLjsGjHpk',
-                filename: 'gview-remote-ubuntu.deb'
-            },
-            windows: {
-                url: 'https://example.com/download/gview-remote-windows.exe',
-                filename: 'gview-remote-windows.exe'
-            }
+            macos: 'https://drive.google.com/file/d/1uB7HPJJhFM8wk4F1F-mUu_VWotiVgvOl/view?usp=sharing',
+            ubuntu: 'https://drive.google.com/file/d/1KH0bFxFSLw-Y2COVeUAqPPJsLjsGjHpk/view?usp=drive_link',
+            windows: 'https://example.com/download/gview-remote-windows.exe'
         };
 
-        Object.entries(downloadLinks).forEach(([platform, { url, filename }]) => {
+        Object.entries(downloadLinks).forEach(([platform, url]) => {
             const linkEl = document.getElementById(`${platform}-link`);
             if (!linkEl) return;
             linkEl.href = url;
-            linkEl.setAttribute('download', filename);
+            linkEl.removeAttribute('download');
             linkEl.setAttribute('target', '_blank');
             linkEl.setAttribute('rel', 'noopener');
         });
