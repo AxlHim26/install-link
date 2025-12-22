@@ -1747,10 +1747,30 @@
         // Create particles periodically
         setInterval(createParticle, 2000);
 
-        // Update download links here
-        document.getElementById('macos-link').href = 'https://example.com/download/gview-remote-macos.dmg';
-        document.getElementById('ubuntu-link').href = 'https://example.com/download/gview-remote-ubuntu.deb';
-        document.getElementById('windows-link').href = 'https://example.com/download/gview-remote-windows.exe';
+        // Update download links here (direct links so clicking starts download)
+        const downloadLinks = {
+            macos: {
+                url: 'https://drive.google.com/uc?export=download&id=1uB7HPJJhFM8wk4F1F-mUu_VWotiVgvOl',
+                filename: 'gview-remote-macos.dmg'
+            },
+            ubuntu: {
+                url: 'https://drive.google.com/uc?export=download&id=1KH0bFxFSLw-Y2COVeUAqPPJsLjsGjHpk',
+                filename: 'gview-remote-ubuntu.deb'
+            },
+            windows: {
+                url: 'https://example.com/download/gview-remote-windows.exe',
+                filename: 'gview-remote-windows.exe'
+            }
+        };
+
+        Object.entries(downloadLinks).forEach(([platform, { url, filename }]) => {
+            const linkEl = document.getElementById(`${platform}-link`);
+            if (!linkEl) return;
+            linkEl.href = url;
+            linkEl.setAttribute('download', filename);
+            linkEl.setAttribute('target', '_blank');
+            linkEl.setAttribute('rel', 'noopener');
+        });
     </script>
 </body>
 </html>
