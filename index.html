@@ -1715,8 +1715,12 @@
             });
         });
 
-        // Smooth scroll for anchor links with easing
+        // Smooth scroll for anchor links with easing (chỉ cho internal links, không áp dụng cho download links)
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            // Bỏ qua download links
+            if (anchor.classList.contains('download-card') || anchor.id.includes('link')) {
+                return;
+            }
             anchor.addEventListener('click', function (e) {
                 e.preventDefault();
                 const target = document.querySelector(this.getAttribute('href'));
@@ -1747,7 +1751,7 @@
         // Create particles periodically
         setInterval(createParticle, 2000);
 
-        // Update download links here (mở trang Google Drive thay vì cố tải trực tiếp)
+        // Update download links - đảm bảo chúng hoạt động đúng
         const downloadLinks = {
             macos: 'https://drive.google.com/file/d/1uB7HPJJhFM8wk4F1F-mUu_VWotiVgvOl/view?usp=sharing',
             ubuntu: 'https://drive.google.com/file/d/1KH0bFxFSLw-Y2COVeUAqPPJsLjsGjHpk/view?usp=drive_link',
@@ -1757,10 +1761,17 @@
         Object.entries(downloadLinks).forEach(([platform, url]) => {
             const linkEl = document.getElementById(`${platform}-link`);
             if (!linkEl) return;
+            
+            // Set href và đảm bảo link hoạt động
             linkEl.href = url;
-            linkEl.removeAttribute('download');
             linkEl.setAttribute('target', '_blank');
-            linkEl.setAttribute('rel', 'noopener');
+            linkEl.setAttribute('rel', 'noopener noreferrer');
+            
+            // Đảm bảo click event không bị preventDefault
+            linkEl.addEventListener('click', function(e) {
+                // Cho phép link hoạt động bình thường
+                // Không preventDefault để link có thể mở
+            }, false);
         });
     </script>
 </body>
